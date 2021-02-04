@@ -38,8 +38,9 @@ class EmbeddingLayer(nn.Module):
         """
         vocab_size = inputs.shape[-1]
         sparse_inputs = torch.argmax(inputs, axis=-1)
+        # import ipdb; ipdb.set_trace()
         location_logits = [torch.zeros([sparse_inputs.shape[0], self.output_size])]
-        for dim, embedding_layer in enumerate(self.embeddings, 1): # starts the enumerate from 1, not 0. 
+        for dim, embedding_layer in enumerate(self.embeddings, 1): # starts the enumerate from 1, not 0.
             powers = torch.pow(vocab_size, torch.arange(dim)).unsqueeze(0)
             #print(torch.pow(vocab_size, torch.arange(dim)), dim)
             # cutting up and feeding values in autoregressively. 
@@ -47,8 +48,8 @@ class EmbeddingLayer(nn.Module):
                     sparse_inputs[:, :dim] * powers, axis=1)
             #print(sparse_inputs.shape, embedding_indices.shape, embedding_indices.dtype, 'sparse inputs, embedding dims:',
             #                    sparse_inputs[0], embedding_indices[0])
-            location_logits.append(embedding_layer(embedding_indices))
 
+            location_logits.append(embedding_layer(embedding_indices))
         location_logits = torch.stack(location_logits, axis=1)
         #print('returned by the custom layer', location_logits.shape,location_logits.dtype, location_logits[0])
         return location_logits

@@ -205,6 +205,7 @@ class DiscreteAutoregressiveFlow(nn.Module):
         """Forward pass returning the autoregressive transformation. Data to latent."""
 
         net = self.layer(inputs, **kwargs)
+        import ipdb; ipdb.set_trace()
         if net.shape[-1] == 2 * self.vocab_size:
             loc, scale = torch.split(net, self.vocab_size, dim=-1)
             scale = disc_utils.one_hot_argmax(scale, self.temperature).type(inputs.dtype)
