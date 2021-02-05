@@ -20,6 +20,7 @@ class LSTMLayer(nn.Module):
         self.output_size = output_size
         sequence_length = input_shape[-2]
         vocab_size = input_shape[-1]
+        self.loc_zero = torch.randn(self.output_size)
         self.lstm = nn.LSTM(input_size=vocab_size, hidden_size=self.output_size, num_layers=1, batch_first=True, bidirectional=False)
 
         # if self.output_size is None:
@@ -39,10 +40,12 @@ class LSTMLayer(nn.Module):
             initial_state: `Tensor` of initial states corresponding to encoder output.
         """
 
-        lstm_output = self.lstm(inputs)
-
-        output = lstm_output[0]
-        return output
+        location_logits = torch.zeros_like(inputs).to(inputs.device)
+        location_logits[:,0] = self.loc_zero
+        
+        output, _ = self.lstm(inputs[:,:-1])
+        location_logits[:,1:] = output
+        return location_logits
 
         # vocab_size = inputs.shape[-1]
         # sparse_inputs = torch.argmax(inputs, axis=-1) # [bs, seq_len]

@@ -77,9 +77,9 @@ for i in range(num_flows):
 
 model = DiscreteAutoFlowModel(flows)
 
-base_log_probs = torch.tensor(torch.randn(sequence_length, vocab_size), requires_grad = True)
-base_log_probs_zero = torch.tensor(torch.randn(sequence_length, vocab_size), requires_grad = True)
-base_log_probs_one = torch.tensor(torch.randn(sequence_length, vocab_size), requires_grad = True)
+base_log_probs = torch.randn(sequence_length, vocab_size).requires_grad_(True)
+base_log_probs_zero = torch.randn(sequence_length, vocab_size).requires_grad_(True)
+base_log_probs_one = torch.randn(sequence_length, vocab_size).requires_grad_(True)
 
 
 base = torch.distributions.OneHotCategorical(logits = base_log_probs)
@@ -117,7 +117,6 @@ for e in range(epochs):
     init_one_hot = torch.argmax(x, dim=-1)
     after_one_hot = torch.argmax(model.reverse(zs), dim=-1)
     print(torch.all(init_one_hot == after_one_hot))
-    # import ipdb; ipdb.set_trace()
     loss.backward()
     optimizer.step()
 
