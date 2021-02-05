@@ -37,10 +37,10 @@ class EmbeddingLayer(nn.Module):
             initial_state: `Tensor` of initial states corresponding to encoder output.
         """
         vocab_size = inputs.shape[-1]
-        sparse_inputs = torch.argmax(inputs, axis=-1)
-        # import ipdb; ipdb.set_trace()
-        location_logits = [torch.zeros([sparse_inputs.shape[0], self.output_size])]
+        sparse_inputs = torch.argmax(inputs, axis=-1) # [bs, seq_len]
+        location_logits = [torch.zeros([sparse_inputs.shape[0], self.output_size])] # [bs, vocab_size]
         for dim, embedding_layer in enumerate(self.embeddings, 1): # starts the enumerate from 1, not 0.
+            # import ipdb; ipdb.set_trace()
             powers = torch.pow(vocab_size, torch.arange(dim)).unsqueeze(0)
             #print(torch.pow(vocab_size, torch.arange(dim)), dim)
             # cutting up and feeding values in autoregressively. 

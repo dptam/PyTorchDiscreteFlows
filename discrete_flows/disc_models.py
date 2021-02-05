@@ -205,7 +205,7 @@ class DiscreteAutoregressiveFlow(nn.Module):
         """Forward pass returning the autoregressive transformation. Data to latent."""
 
         net = self.layer(inputs, **kwargs)
-        import ipdb; ipdb.set_trace()
+
         if net.shape[-1] == 2 * self.vocab_size:
             loc, scale = torch.split(net, self.vocab_size, dim=-1)
             scale = disc_utils.one_hot_argmax(scale, self.temperature).type(inputs.dtype)
@@ -215,7 +215,7 @@ class DiscreteAutoregressiveFlow(nn.Module):
             scaled_inputs = inputs
         else:
             raise ValueError('Output of layer does not have compatible dimensions.')
-        loc = disc_utils.one_hot_argmax(loc, self.temperature).type(inputs.dtype)
+        loc = disc_utils.one_hot_argmax(loc, self.temperature).type(inputs.dtype) # [bs, seq_len, vocab_size]
         outputs = disc_utils.one_hot_add(scaled_inputs, loc)
         return outputs
 

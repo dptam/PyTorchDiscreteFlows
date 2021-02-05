@@ -13,6 +13,7 @@ from discrete_flows.made import MADE
 from discrete_flows.mlp import MLP
 from discrete_flows.embed import EmbeddingLayer
 from discrete_flows.disc_models import *
+from discrete_flows.lstm import LSTMLayer
 
 def sample_quantized_gaussian_mixture(batch_size):
     """Samples data from a 2D quantized mixture of Gaussians.
@@ -38,7 +39,7 @@ def sample_quantized_gaussian_mixture(batch_size):
     quantized_samples = (torch.round(clipped_samples * 20) + 45).long()
     return quantized_samples
 
-batch_size, sequence_length, vocab_size = 1024, 2, 91
+batch_size, sequence_length, vocab_size = 32, 2, 91
 data = sample_quantized_gaussian_mixture(batch_size)
 
 num_flows = 1 # number of flow steps. This is different to the number of layers used inside each flow
@@ -53,7 +54,8 @@ flows = []
 for i in range(num_flows):
     if disc_layer_type == 'autoreg':
 
-        layer = EmbeddingLayer([batch_size, sequence_length, vocab_size], output_size=vocab_size)
+        layer = LSTMLayer([batch_size, sequence_length, vocab_size], output_size=vocab_size)
+        # layer = EmbeddingLayer([batch_size, sequence_length, vocab_size], output_size=vocab_size)
         # MADE network is much more powerful.
         # layer = MADE([batch_size, sequence_length, vocab_size], vocab_size, [nh, nh, nh])
 
@@ -76,6 +78,10 @@ for i in range(num_flows):
 model = DiscreteAutoFlowModel(flows)
 
 base_log_probs = torch.tensor(torch.randn(sequence_length, vocab_size), requires_grad = True)
+base_log_probs_zero = torch.tensor(torch.randn(sequence_length, vocab_size), requires_grad = True)
+base_log_probs_one = torch.tensor(torch.randn(sequence_length, vocab_size), requires_grad = True)
+
+
 base = torch.distributions.OneHotCategorical(logits = base_log_probs)
 
 epochs = 1500
@@ -98,8 +104,7 @@ for e in range(epochs):
         x = x.view(x.shape[0], -1)  # flattening vector
 
     optimizer.zero_grad()
-    zs = model.forward(x)
-
+    zs = model.forward(x) # [bs, seq_len, vocab_size]
     if disc_layer_type == 'bipartite':
         zs = zs.view(batch_size, sequence_length, -1)  # adding back in sequence dimension
 
@@ -108,10 +113,15 @@ for e in range(epochs):
     logprob = zs * base_log_probs_sm  # zs are onehot so zero out all other logprobs.
     loss = -torch.sum(logprob) / batch_size
 
+
+    init_one_hot = torch.argmax(x, dim=-1)
+    after_one_hot = torch.argmax(model.reverse(zs), dim=-1)
+    print(torch.all(init_one_hot == after_one_hot))
+    # import ipdb; ipdb.set_trace()
     loss.backward()
     optimizer.step()
 
     losses.append(loss.item())
 
-    if e % print_loss_every == 0:
-        print('epoch:', e, 'loss:', loss.item())
+    # if e % print_loss_every == 0:
+    print('epoch:', e, 'loss:', loss.item())
